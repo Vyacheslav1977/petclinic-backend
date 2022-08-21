@@ -39,11 +39,19 @@ class PetsRepository {
   }
 
   getAll() {
-    return this.dao.all(`SELECT pets.id as id, pets.name as name, clients.id as client, clients.name as cname FROM pets LEFT JOIN clients ON clients.pet = pets.id`);
+    return this.dao.all(`
+      SELECT pets.id as id, pets.name as name, clients.id as client, clients.name as cname
+      FROM pets
+      LEFT JOIN clients ON clients.pet = pets.id
+    `);
   }
 
   search(name) {
-    return this.dao.all(`SELECT * FROM pets WHERE name LIKE '%` + name + `%'`); // todo: name надо экранировать (чтобы исключить риск sql-инъекций)
+    return this.dao.all(`
+      SELECT pets.id as id, pets.name as name, clients.id as client, clients.name as cname
+      FROM (SELECT * FROM pets WHERE pets.name LIKE '%` + name + `%') as pets
+      LEFT JOIN clients ON clients.pet = pets.id
+    `); // todo: name надо экранировать (чтобы исключить риск sql-инъекций)
   }
 
 }

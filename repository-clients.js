@@ -40,11 +40,19 @@ class ClientsRepository {
   }
 
   getAll() {
-    return this.dao.all(`SELECT clients.id as id, clients.name as name, pets.id as pet, pets.name as pname FROM clients LEFT JOIN pets ON clients.pet = pets.id`);
+    return this.dao.all(`
+      SELECT clients.id as id, clients.name as name, pets.id as pet, pets.name as pname
+      FROM clients
+      LEFT JOIN pets ON clients.pet = pets.id
+    `);
   }
 
   search(name) {
-    return this.dao.all(`SELECT * FROM clients WHERE name LIKE '%` + name + `%'`); // todo: name надо экранировать (чтобы исключить риск sql-инъекций)
+    return this.dao.all(`
+      SELECT clients.id as id, clients.name as name, pets.id as pet, pets.name as pname
+      FROM (SELECT * FROM clients WHERE clients.name LIKE '%` + name + `%') as clients
+      LEFT JOIN pets ON clients.pet = pets.id
+    `); // todo: name надо экранировать (чтобы исключить риск sql-инъекций)
   }
 
   getIdByPet(petId) {

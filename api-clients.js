@@ -19,17 +19,27 @@ async function parseClientsRequest({body, id, res, req}) {
   }
   else if (req.method === 'POST' && id === 'search') { // сделал через POST, чтобы упростить себе задачу
     let data = await getDataFromRequest(req);
-    let rows = await clientsRepository.search(JSON.parse(data).name);
-    sendJSON({res, code: 200, data: rows});
+    let rows = (await clientsRepository.search(JSON.parse(data).name)).map(i => new Client(i.id, i.name, i.pet === null ? null : new Pet(i.pet, i.pname)));
+    sendJSON({res, code: 200, data: rows.map(r => r.stringify())});
   }
   else if (req.method === 'POST') { // Create
     let data = await getDataFromRequest(req);
-    let row = await clientsRepository.create(JSON.parse(data).name);
-    // todo: надо прочитать из БД добавленную строку и вернуть её
-    sendJSON({res, code: 200, data: row});
+    const name = (JSON.parse(data).name).trim();
+    if (!name || name.length < 3) {
+      sendJSON({res, code: 400, message: 'Длина имени должна быть не меньше 3 букв.'});
+      return;
+    }
+    let row = await clientsRepository.create(name);
+    const fullRow = await clientsRepository.getById(row.id);
+    sendJSON({res, code: 200, data: fullRow});
   }
   else if (req.method === 'PUT' && id) { // Update
     let data = await getDataFromRequest(req);
+    const name = (JSON.parse(data).name).trim();
+    if (!name || name.length < 3) {
+      sendJSON({res, code: 400, message: 'Длина имени должна быть не меньше 3 букв.'});
+      return;
+    }
     const petId = JSON.parse(data).pet;
     if (petId) {
       const oldClient = await clientsRepository.getIdByPet(petId); // текущее значение клиента для питомца
@@ -37,7 +47,7 @@ async function parseClientsRequest({body, id, res, req}) {
         await clientsRepository.update({id: oldClient.id, name: oldClient.name, pet: null});
       }
     }
-    await clientsRepository.update({id, ...JSON.parse(data)});
+    await clientsRepository.update({id, ...JSON.parse(data), name});
     // todo: надо прочитать из БД изменённую строку и вернуть её
     sendJSON({res, code: 200});
   }
